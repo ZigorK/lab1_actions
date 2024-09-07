@@ -82,16 +82,16 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
-              ./helloworld-0.0.${{ github.run_number }}-Linux.deb
+              echo ./helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'Windows' ]]; then
-              ./helloworld-0.0.${{ github.run_number }}-Windows.zip
+              echo ./helloworld-0.0.${{ github.run_number }}-Windows.zip
           asset_name: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
-              helloworld-0.0.${{ github.run_number }}-Linux.deb
+              echo helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'Windows' ]]; then
-              helloworld-0.0.${{ github.run_number }}-Windows.zip
+              echo helloworld-0.0.${{ github.run_number }}-Windows.zip
           asset_content_type: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
-              application/vnd.debian.binary-package
+              echo application/vnd.debian.binary-package
             elif [[ ${{ runner.os }} == 'Windows' ]]; then
-              application/zip
+              echo application/zip
