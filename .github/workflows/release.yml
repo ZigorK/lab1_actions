@@ -8,17 +8,59 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    permissions: write-all
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v3
         with:
           submodules: true
-      - run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
-      - run: cmake . -DPATCH_VERSION=${{ github.run_number }}
-      - run: cmake --build .
-      - run: cmake --build . --target test
-      - run: cmake --build . --target package
+
+      # Install dependencies based on OS
+      - name: Install dependencies
+        run: |
+          if [ ${{ runner.os }} == 'Linux' ]; then
+            sudo apt-get update && sudo apt-get install libboost-test-dev -y
+          elif [ ${{ runner.os }} == 'Windows' ]; then
+            choco install boost-msvc-14.1 --ignore-checksums
+            refreshenv
+
+      # Configure with CMake based on OS
+      - name: Configure with CMake
+        run: |
+          if [ ${{ runner.os }} == 'Linux' ]; then
+            cmake . -DPATCH_VERSION=${{ github.run_number }}
+          elif [ ${{ runner.os }} == 'Windows' ]; then
+            cmake . -G "Visual Studio 16 2019" -A x64 -DPATCH_VERSION=${{ github.run_number }}
+
+      # Build the project
+      - name: Build the project
+        run: |
+          if [ ${{ runner.os }} == 'Linux' ]; then
+            cmake --build .
+          elif [ ${{ runner.os }} == 'Windows' ]; then
+            cmake --build . --config Release
+
+      # Run tests
+      - name: Run tests
+        run: |
+          if [ ${{ runner.os }} == 'Linux' ]; then
+            cmake --build . --target test
+          elif [ ${{ runner.os }} == 'Windows' ]; then
+            cmake --build . --config Release --target RUN_TESTS
+
+      # Create a package (optional, based on OS)
+      - name: Create package
+        run: |
+          if [ ${{ runner.os }} == 'Linux' ]; then
+            cmake --build . --target package
+          elif [ ${{ runner.os }} == 'Windows' ]; then
+            cmake --build . --config Release --target PACKAGE
+
+      # Create a release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -29,6 +71,8 @@ jobs:
           release_name: Release ${{ github.run_number }}
           draft: false
           prerelease: false
+
+      # Upload the package based on OS
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
@@ -36,6 +80,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./helloworld-0.0.${{ github.run_number }}-Linux.deb
-          asset_name: helloworld-0.0.${{ github.run_number }}-Linux.deb
-          asset_content_type: application/vnd.debian.binary-package
+          asset_path: |
+            if [ ${{ runner.os }} == 'Linux' ]; then
+              ./helloworld-0.0.${{ github.run_number }}-Linux.deb
+            elif [ ${{ runner.os }} == 'Windows' ]; then
+              ./helloworld-0.0.${{ github.run_number }}-Windows.zip
+          asset_name: |
+            if [ ${{ runner.os }} == 'Linux' ]; then
+              helloworld-0.0.${{ github.run_number }}-Linux.deb
+            elif [ ${{ runner.os }} == 'Windows' ]; then
+              helloworld-0.0.${{ github.run_number }}-Windows.zip
+          asset_content_type: |
+            if [ ${{ runner.os }} == 'Linux' ]; then
+              application/vnd.debian.binary-package
+            elif [ ${{ runner.os }} == 'Windows' ]; then
+              application/zip
