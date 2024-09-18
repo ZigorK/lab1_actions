@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]  # Только Linux и macOS
+        os: [ubuntu-latest, macos-latest]  # Linux и macOS
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -20,7 +20,7 @@ jobs:
           submodules: true
 
       # Установка зависимостей для Linux и macOS
-      - name: Install dependencies (Linux and macOS)
+      - name: Install dependencies
         run: |
           if [[ ${{ runner.os }} == 'Linux' ]]; then
             sudo apt-get update && sudo apt-get install libboost-test-dev -y
@@ -31,28 +31,22 @@ jobs:
       # Configure CMake
       - name: Configure with CMake
         run: |
-          if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
-            cmake . -DPATCH_VERSION=${{ github.run_number }}
+          cmake . -DPATCH_VERSION=${{ github.run_number }}
 
       # Build the project
       - name: Build the project
         run: |
-          if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
-            cmake --build .
+          cmake --build .
 
       # Run tests
       - name: Run tests
         run: |
-          if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
-            cmake --build . --target test
+          cmake --build . --target test
 
       # Create a package
       - name: Create package
         run: |
-          if [[ ${{ runner.os }} == 'Linux' ]]; then
-            cmake --build . --target package
-          elif [[ ${{ runner.os }} == 'macOS' ]]; then
-            cmake --build . --target package
+          cmake --build . --target package
 
       # Create a release
       - name: Create Release
