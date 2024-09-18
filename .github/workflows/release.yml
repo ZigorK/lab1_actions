@@ -10,53 +10,45 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]  # Linux и macOS
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
-      # Checkout the repository
       - uses: actions/checkout@v3
         with:
           submodules: true
 
-      # Установка зависимостей для Linux
       - name: Install dependencies on Linux
         if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y libboost-test-dev
 
-      # Установка зависимостей для macOS
       - name: Install dependencies on macOS
         if: ${{ runner.os == 'macOS' }}
         run: |
           brew update
           brew install boost
 
-      # Configure CMake
       - name: Configure with CMake
         run: |
           cmake . -DPATCH_VERSION=${{ github.run_number }}
 
-      # Build the project
       - name: Build the project
         run: |
           cmake --build .
 
-      # Run tests
       - name: Run tests
         run: |
           cmake --build . --target test
 
-      # Create a package
       - name: Create package
         run: |
           cmake --build . --target package
 
-      # Create a release
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -65,7 +57,6 @@ jobs:
           draft: false
           prerelease: false
 
-      # Upload the package
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
