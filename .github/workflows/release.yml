@@ -48,34 +48,35 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v2
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }}
+          tag_name: ${{ github.run_number }}
           release_name: Release ${{ github.run_number }}
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset
-        id: upload-release-asset
+      - name: Upload Release Asset (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        id: upload-linux
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: |
-            if [ ${{ runner.os }} == 'Linux' ]; then
-              echo ./helloworld-0.0.${{ github.run_number }}-Linux.deb
-            elif [ ${{ runner.os }} == 'macOS' ]; then
-              echo ./helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
-          asset_name: |
-            if [ ${{ runner.os }} == 'Linux' ]; then
-              echo helloworld-0.0.${{ github.run_number }}-Linux.deb
-            elif [ ${{ runner.os }} == 'macOS' ]; then
-              echo helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
-          asset_content_type: |
-            if [ ${{ runner.os }} == 'Linux' ]; then
-              echo application/vnd.debian.binary-package
-            elif [ ${{ runner.os }} == 'macOS' ]; then
-              echo application/x-gtar
+          asset_path: ./helloworld-0.0.${{ github.run_number }}-Linux.deb
+          asset_name: helloworld-0.0.${{ github.run_number }}-Linux.deb
+          asset_content_type: application/vnd.debian.binary-package
+
+      - name: Upload Release Asset (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        id: upload-macos
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
+          asset_name: helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
+          asset_content_type: application/x-gtar
