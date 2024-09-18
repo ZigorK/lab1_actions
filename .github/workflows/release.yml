@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest] # Добавляем macOS
+        os: [ubuntu-latest, macos-latest]  # Только Linux и macOS
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -19,9 +19,8 @@ jobs:
         with:
           submodules: true
 
-      # Установка зависимостей для каждой ОС
-      - name: Install dependencies (Ubuntu and macOS)
-        if: runner.os != 'Windows'
+      # Установка зависимостей для Linux и macOS
+      - name: Install dependencies (Linux and macOS)
         run: |
           if [[ ${{ runner.os }} == 'Linux' ]]; then
             sudo apt-get update && sudo apt-get install libboost-test-dev -y
@@ -29,35 +28,23 @@ jobs:
             brew update
             brew install boost
 
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          choco install boost-msvc-14.1 --ignore-checksums
-          refreshenv
-
       # Configure CMake
       - name: Configure with CMake
         run: |
           if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
             cmake . -DPATCH_VERSION=${{ github.run_number }}
-          elif [[ ${{ runner.os }} == 'Windows' ]]; then
-            cmake . -G "Visual Studio 16 2019" -A x64 -DPATCH_VERSION=${{ github.run_number }}
 
       # Build the project
       - name: Build the project
         run: |
           if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
             cmake --build .
-          elif [[ ${{ runner.os }} == 'Windows' ]]; then
-            cmake --build . --config Release
 
       # Run tests
       - name: Run tests
         run: |
           if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
             cmake --build . --target test
-          elif [[ ${{ runner.os }} == 'Windows' ]]; then
-            cmake --build . --config Release --target RUN_TESTS
 
       # Create a package
       - name: Create package
@@ -66,8 +53,6 @@ jobs:
             cmake --build . --target package
           elif [[ ${{ runner.os }} == 'macOS' ]]; then
             cmake --build . --target package
-          elif [[ ${{ runner.os }} == 'Windows' ]]; then
-            cmake --build . --config Release --target PACKAGE
 
       # Create a release
       - name: Create Release
@@ -94,19 +79,13 @@ jobs:
               echo ./helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'macOS' ]]; then
               echo ./helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
-            elif [[ ${{ runner.os }} == 'Windows' ]]; then
-              echo ./helloworld-0.0.${{ github.run_number }}-Windows.zip
           asset_name: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
               echo helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'macOS' ]]; then
               echo helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
-            elif [[ ${{ runner.os }} == 'Windows' ]]; then
-              echo helloworld-0.0.${{ github.run_number }}-Windows.zip
           asset_content_type: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
               echo application/vnd.debian.binary-package
             elif [[ ${{ runner.os }} == 'macOS' ]]; then
               echo application/x-gtar
-            elif [[ ${{ runner.os }} == 'Windows' ]]; then
-              echo application/zip
