@@ -23,7 +23,8 @@ jobs:
       - name: Install dependencies
         run: |
           if [[ ${{ runner.os }} == 'Linux' ]]; then
-            sudo apt-get update && sudo apt-get install libboost-test-dev -y
+            sudo apt-get update
+            sudo apt-get install -y libboost-test-dev
           elif [[ ${{ runner.os }} == 'macOS' ]]; then
             brew update
             brew install boost
