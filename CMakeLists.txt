@@ -63,10 +63,11 @@ install(TARGETS helloworld_cli RUNTIME DESTINATION bin)
 # Add CPack configuration
 if (APPLE)
     set(CPACK_GENERATOR "Bundle")
-    set(CPACK_BUNDLE_NAME "helloworld")
-    set(CPACK_BUNDLE_ICON ${CMAKE_SOURCE_DIR}/icon.icns) # Optional, if you have an icon
+    set(CPACK_PACKAGE_NAME "helloworld")
     set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
     set(CPACK_PACKAGE_FILE_NAME "helloworld-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}")
+    set(CPACK_BUNDLE_NAME "helloworld")
+    set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/Info.plist")  # Укажите путь к Info.plist
 elseif (UNIX)
     set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGE_NAME "helloworld")
@@ -81,3 +82,4 @@ include(CPack)
 enable_testing()
 
 add_test(test_version test_version)
+
