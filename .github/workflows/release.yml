@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       # Checkout the repository
@@ -27,6 +27,9 @@ jobs:
           elif [[ ${{ runner.os }} == 'Windows' ]]; then
             choco install boost-msvc-14.1 --ignore-checksums
             refreshenv
+          elif [[ ${{ runner.os }} == 'macOS' ]]; then
+            brew update
+            brew install boost
 
       # Configure with CMake based on OS
       - name: Configure with CMake
@@ -35,6 +38,8 @@ jobs:
             cmake . -DPATCH_VERSION=${{ github.run_number }}
           elif [[ ${{ runner.os }} == 'Windows' ]]; then
             cmake . -G "Visual Studio 16 2019" -A x64 -DPATCH_VERSION=${{ github.run_number }}
+          elif [[ ${{ runner.os }} == 'macOS' ]]; then
+            cmake . -DPATCH_VERSION=${{ github.run_number }}
 
       # Build the project
       - name: Build the project
@@ -43,6 +48,8 @@ jobs:
             cmake --build .
           elif [[ ${{ runner.os }} == 'Windows' ]]; then
             cmake --build . --config Release
+          elif [[ ${{ runner.os }} == 'macOS' ]]; then
+            cmake --build .
 
       # Run tests
       - name: Run tests
@@ -51,6 +58,8 @@ jobs:
             cmake --build . --target test
           elif [[ ${{ runner.os }} == 'Windows' ]]; then
             cmake --build . --config Release --target RUN_TESTS
+          elif [[ ${{ runner.os }} == 'macOS' ]]; then
+            cmake --build . --target test
 
       # Create a package (optional, based on OS)
       - name: Create package
@@ -59,6 +68,8 @@ jobs:
             cmake --build . --target package
           elif [[ ${{ runner.os }} == 'Windows' ]]; then
             cmake --build . --config Release --target PACKAGE
+          elif [[ ${{ runner.os }} == 'macOS' ]]; then
+            cmake --build . --target package
 
       # Create a release
       - name: Create Release
@@ -85,13 +96,19 @@ jobs:
               echo ./helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'Windows' ]]; then
               echo ./helloworld-0.0.${{ github.run_number }}-Windows.zip
+            elif [[ ${{ runner.os }} == 'macOS' ]]; then
+              echo ./helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
           asset_name: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
               echo helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'Windows' ]]; then
               echo helloworld-0.0.${{ github.run_number }}-Windows.zip
+            elif [[ ${{ runner.os }} == 'macOS' ]]; then
+              echo helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
           asset_content_type: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
               echo application/vnd.debian.binary-package
             elif [[ ${{ runner.os }} == 'Windows' ]]; then
               echo application/zip
+            elif [[ ${{ runner.os }} == 'macOS' ]]; then
+              echo application/gzip
