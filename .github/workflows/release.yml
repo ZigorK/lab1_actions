@@ -8,21 +8,20 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-
-    permissions: write-all
+        os: [ubuntu-latest, windows-latest, macos-latest] # Добавляем macOS
+    runs-on: ${{ matrix.os }}
 
     steps:
-      # Checkout the repository with submodules
+      # Checkout the repository
       - uses: actions/checkout@v3
         with:
           submodules: true
 
-      # Install dependencies based on OS
-      - name: Install dependencies
+      # Установка зависимостей для каждой ОС
+      - name: Install dependencies (Ubuntu and macOS)
+        if: runner.os != 'Windows'
         run: |
           if [[ ${{ runner.os }} == 'Linux' ]]; then
             sudo apt-get update && sudo apt-get install libboost-test-dev -y
@@ -30,28 +29,47 @@ jobs:
             brew update
             brew install boost
 
-      # Configure project with CMake
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install boost-msvc-14.1 --ignore-checksums
+          refreshenv
+
+      # Configure CMake
       - name: Configure with CMake
-        run: cmake . -DPATCH_VERSION=${{ github.run_number }}
+        run: |
+          if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
+            cmake . -DPATCH_VERSION=${{ github.run_number }}
+          elif [[ ${{ runner.os }} == 'Windows' ]]; then
+            cmake . -G "Visual Studio 16 2019" -A x64 -DPATCH_VERSION=${{ github.run_number }}
 
       # Build the project
       - name: Build the project
-        run: cmake --build .
+        run: |
+          if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
+            cmake --build .
+          elif [[ ${{ runner.os }} == 'Windows' ]]; then
+            cmake --build . --config Release
 
       # Run tests
       - name: Run tests
-        run: cmake --build . --target test
+        run: |
+          if [[ ${{ runner.os }} == 'Linux' || ${{ runner.os }} == 'macOS' ]]; then
+            cmake --build . --target test
+          elif [[ ${{ runner.os }} == 'Windows' ]]; then
+            cmake --build . --config Release --target RUN_TESTS
 
-      # Create package using CPack
+      # Create a package
       - name: Create package
-        run: cmake --build . --target package
+        run: |
+          if [[ ${{ runner.os }} == 'Linux' ]]; then
+            cmake --build . --target package
+          elif [[ ${{ runner.os }} == 'macOS' ]]; then
+            cmake --build . --target package
+          elif [[ ${{ runner.os }} == 'Windows' ]]; then
+            cmake --build . --config Release --target PACKAGE
 
-      # Verify the package was created (for Linux only)
-      - name: Check package existence
-        if: runner.os == 'Linux'
-        run: ls -lh ./helloworld-0.0.${{ github.run_number }}-Linux.deb
-
-      # Create a new release in GitHub
+      # Create a release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -63,7 +81,7 @@ jobs:
           draft: false
           prerelease: false
 
-      # Upload the release asset based on OS
+      # Upload the package
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
@@ -76,13 +94,19 @@ jobs:
               echo ./helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'macOS' ]]; then
               echo ./helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
+            elif [[ ${{ runner.os }} == 'Windows' ]]; then
+              echo ./helloworld-0.0.${{ github.run_number }}-Windows.zip
           asset_name: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
               echo helloworld-0.0.${{ github.run_number }}-Linux.deb
             elif [[ ${{ runner.os }} == 'macOS' ]]; then
               echo helloworld-0.0.${{ github.run_number }}-macOS.tar.gz
+            elif [[ ${{ runner.os }} == 'Windows' ]]; then
+              echo helloworld-0.0.${{ github.run_number }}-Windows.zip
           asset_content_type: |
             if [[ ${{ runner.os }} == 'Linux' ]]; then
               echo application/vnd.debian.binary-package
             elif [[ ${{ runner.os }} == 'macOS' ]]; then
-              echo application/gzip
+              echo application/x-gtar
+            elif [[ ${{ runner.os }} == 'Windows' ]]; then
+              echo application/zip
