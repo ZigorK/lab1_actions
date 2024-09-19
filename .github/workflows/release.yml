@@ -49,19 +49,15 @@ jobs:
         run: |
           cmake --build . --target package
 
-      - name: Install GitHub CLI
-        run: |
-          sudo apt-get install gh || brew install gh
-
       - name: Delete existing release and tag if they exist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Удаление релиза, если он существует
-          RELEASE_ID=$(gh api -X GET "repos/${{ github.repository }}/releases/tags/${{ github.run_number }}" --jq '.id' 2>/dev/null || echo "")
+          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.run_number }}" | jq -r '.id // empty')
           if [ -n "$RELEASE_ID" ]; then
             echo "Deleting existing release with ID $RELEASE_ID"
-            gh api -X DELETE "repos/${{ github.repository }}/releases/$RELEASE_ID"
+            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
           else
             echo "No existing release found."
           fi
