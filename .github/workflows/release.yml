@@ -48,8 +48,14 @@ jobs:
 
       - name: Delete old tag if exists
         run: |
-          git tag -d ${{ github.run_number }} || true
-          git push origin :refs/tags/${{ github.run_number }} || true
+          # Check if tag exists on remote
+          git fetch --tags
+          if git rev-parse -q --verify "refs/tags/${{ github.run_number }}"; then
+            git tag -d ${{ github.run_number }}
+            git push origin :refs/tags/${{ github.run_number }}
+          else
+            echo "Tag does not exist. Proceeding with release creation."
+          fi
 
       - name: Create Release
         id: create_release
