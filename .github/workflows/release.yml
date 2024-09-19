@@ -7,7 +7,7 @@ on:
       - feature/github_actions
 
 permissions:
-  contents: write  # Права на запись для удаления тегов и релизов
+  contents: write  # Права на запись
 
 jobs:
   build:
@@ -49,27 +49,36 @@ jobs:
         run: |
           cmake --build . --target package
 
-      - name: Delete existing release and tag if they exist
+      - name: Install GitHub CLI
         run: |
-          # Check if the release and tag exist and delete them if they do
+          sudo apt-get install gh || brew install gh
+
+      - name: Delete existing release and tag if they exist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Удаление релиза, если он существует
           RELEASE_ID=$(gh api -X GET "repos/${{ github.repository }}/releases/tags/${{ github.run_number }}" --jq '.id' || echo "")
           if [ -n "$RELEASE_ID" ]; then
             echo "Deleting existing release with ID $RELEASE_ID"
             gh api -X DELETE "repos/${{ github.repository }}/releases/$RELEASE_ID"
+          else
+            echo "No existing release found."
           fi
-          # Delete the tag if it exists
+
+          # Удаление тега, если он существует
           if git rev-parse -q --verify "refs/tags/${{ github.run_number }}"; then
             git tag -d ${{ github.run_number }}
             git push origin :refs/tags/${{ github.run_number }}
           else
-            echo "Tag does not exist. Proceeding with release creation."
+            echo "Tag does not exist."
           fi
 
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Убедитесь, что токен указан правильно
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.run_number }}
           release_name: Release ${{ github.run_number }}
@@ -96,6 +105,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./helloworld-0.0.${{ github.run_number }}-Darwin.dmg  # Исправлено на .dmg
-          asset_name: helloworld-0.0.${{ github.run_number }}-Darwin.dmg    # Исправлено на .dmg
-          asset_content_type: application/x-apple-diskimage  # MIME-тип для .dmg
+          asset_path: ./helloworld-0.0.${{ github.run_number }}-Darwin.dmg
+          asset_name: helloworld-0.0.${{ github.run_number }}-Darwin.dmg
+          asset_content_type: application/x-apple-diskimage
