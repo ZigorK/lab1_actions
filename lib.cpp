@@ -1,6 +1,6 @@
-#include "version.h"  // подключаем сгенерированный version.h
 #include "lib.h"
+#include "version.h"
 
-int version() {
-    return PROJECT_VERSION_PATCH;  // возвращаем версию
+const char* version() {
+    return PROJECT_VERSION;  // Возвращает строку с версией
 }
