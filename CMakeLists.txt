@@ -78,3 +78,6 @@ include(CPack)
 # Настройка тестов
 enable_testing()
 add_test(NAME test_version COMMAND test_version)
+
+message("Configured PATCH_VERSION: ${PATCH_VERSION}")
+message("Configured PROJECT_VERSION: ${PROJECT_VERSION}")
