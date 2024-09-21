@@ -1,8 +1,6 @@
+#include "version.h"  // подключаем сгенерированный version.h
 #include "lib.h"
 
-#include "version.h"
-
 int version() {
-    return PROJECT_VERSION_PATCH;
-    
+    return PROJECT_VERSION_PATCH;  // возвращаем версию
 }

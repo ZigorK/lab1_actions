@@ -1,8 +1,7 @@
-#include "lib.h"
+#include "version.h"
 #include <iostream>
 
-int main(int, char **) {
-    std::cout << "Version: " << version() << std::endl;
-    std::cout << "Hello, world!" << std::endl;
+int main() {
+    std::cout << "Hello, World! Version " << PROJECT_VERSION << std::endl;
     return 0;
 }

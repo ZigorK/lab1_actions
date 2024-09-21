@@ -7,7 +7,7 @@ else()
     set(PATCH_VERSION "1")
 endif()
 
-set(PROJECT_VERSION "0.0.${PATCH_VERSION}")
+set(PROJECT_VERSION "1.0.${PATCH_VERSION}")
 project(helloworld VERSION ${PROJECT_VERSION})
 
 # Найти Boost для тестирования
@@ -28,9 +28,8 @@ set_target_properties(helloworld_cli helloworld test_version PROPERTIES
 )
 
 # Установка директории для заголовочных файлов
-target_include_directories(helloworld
-    PRIVATE "${CMAKE_BINARY_DIR}"
-)
+target_include_directories(helloworld_cli PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(helloworld PRIVATE "${CMAKE_BINARY_DIR}")
 
 # Настройки для тестов
 target_include_directories(test_version
