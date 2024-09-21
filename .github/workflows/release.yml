@@ -35,33 +35,39 @@ jobs:
 
       - name: Configure with CMake
         run: |
-          cmake -S . -B build -DPATCH_VERSION=${{ github.run_number }}
+          cmake . -DPATCH_VERSION=${{ github.run_number }}
 
       - name: Build the project
         run: |
-          cmake --build build
+          cmake --build .
 
       - name: Run tests
         run: |
-          cmake --build build --target test
+          cmake --build . --target test
 
       - name: Create package
         run: |
-          cmake --build build --target package
+          cmake --build . --target package
 
       - name: Delete existing release and tag if they exist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Удаление релиза, если он существует
           RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.run_number }}" | jq -r '.id // empty')
           if [ -n "$RELEASE_ID" ]; then
             echo "Deleting existing release with ID $RELEASE_ID"
             curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+          else
+            echo "No existing release found."
           fi
 
+          # Удаление тега, если он существует
           if git rev-parse -q --verify "refs/tags/${{ github.run_number }}"; then
             git tag -d ${{ github.run_number }}
             git push origin :refs/tags/${{ github.run_number }}
+          else
+            echo "Tag does not exist."
           fi
 
       - name: Create Release
@@ -77,22 +83,24 @@ jobs:
 
       - name: Upload Release Asset (Linux)
         if: ${{ runner.os == 'Linux' }}
+        id: upload-linux
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/helloworld-0.0.${{ github.run_number }}-Linux.deb
+          asset_path: ./helloworld-0.0.${{ github.run_number }}-Linux.deb
           asset_name: helloworld-0.0.${{ github.run_number }}-Linux.deb
           asset_content_type: application/vnd.debian.binary-package
 
       - name: Upload Release Asset (macOS)
         if: ${{ runner.os == 'macOS' }}
+        id: upload-macos
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}s
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/helloworld-0.0.${{ github.run_number }}-Darwin.dmg
+          asset_path: ./helloworld-0.0.${{ github.run_number }}-Darwin.dmg
           asset_name: helloworld-0.0.${{ github.run_number }}-Darwin.dmg
           asset_content_type: application/x-apple-diskimage
