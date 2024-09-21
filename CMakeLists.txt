@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-# Настройка версии
-set(PATCH_VERSION "1" CACHE INTERNAL "Patch version")
-set(PROJECT_VERSION "0.0.${PATCH_VERSION}")
+# Настройка версии с использованием переменной GITHUB_RUN_NUMBER
+if(DEFINED ENV{GITHUB_RUN_NUMBER})
+    set(PATCH_VERSION $ENV{GITHUB_RUN_NUMBER})
+else()
+    set(PATCH_VERSION "1")
+endif()
 
+set(PROJECT_VERSION "0.0.${PATCH_VERSION}")
 project(helloworld VERSION ${PROJECT_VERSION})
 
 # Найти Boost для тестирования
